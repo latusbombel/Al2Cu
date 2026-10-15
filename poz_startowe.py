@@ -6,7 +6,7 @@ unit_cell = read("Al2Cu.cif")
 
 # 2. Powielenie komórki (tworzymy superkomórkę np. 6x6x6)
 # Standardowa komórka Al2Cu ma 12 atomów. 12 * 4 * 4 * 5 = 2592 atomy
-supercell = unit_cell.repeat((4, 4, 5))
+supercell = unit_cell.repeat((10, 10, 10))
 
 # 3. Sortowanie: Twój kod w C++ wymaga, aby najpierw było Al, potem Cu
 al_atoms = [atom for atom in supercell if atom.symbol == 'Al']

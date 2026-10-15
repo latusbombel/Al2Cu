@@ -7,6 +7,7 @@
 #include "classes.h"
 #include <chrono>
 #include <algorithm>
+#include <string>
 
 
 int main(){
@@ -14,9 +15,9 @@ int main(){
     PARAMETRY params;
     params.N = 12000;
     params.r_ref = 2.5; params.rCut = 12./params.r_ref; // w Angstremach
-    params.Lx = 58.49/params.r_ref;
-    params.Ly = 58.49/params.r_ref;
-    params.Lz = 58.49/params.r_ref;
+    params.Lx = 60.67/params.r_ref;
+    params.Ly = 60.67/params.r_ref;
+    params.Lz = 48.77/params.r_ref;
     params.k_B = 1.;
     params.Nit = 10000;
     params.dt = 0.01; 
@@ -77,24 +78,37 @@ int main(){
     std::normal_distribution normal(0.0, 1.0);
 
     // Wczytywanie idealnej sieci krystalicznej z pliku
-    // std::ifstream wczytaj("start_pos.dat");
-    // if (!wczytaj.is_open()) {
-    //     std::cerr << "Blad: Nie mozna otworzyc pliku start_pos.dat!" << std::endl;
-    //     return 1;
-    // }
+    std::ifstream wczytaj("start_pos.dat");
+    if (!wczytaj.is_open()) {
+        std::cerr << "Blad: Nie mozna otworzyc pliku start_pos.dat!" << std::endl;
+        return 1;
+    }
 
-    // for(int i = 0; i<params.N; i++){
-    //     // Ponieważ skrypt w Pythonie zapisał najpierw wszystkie Al, a potem Cu:
-    //     if(i < (params.N * 2 / 3)) particles[i] = Al; // 2/3 to aluminium
-    //     else particles[i] = Cu;                       // 1/3 to miedź
+    for(int i = 0; i<params.N; i++){
+        // Ponieważ skrypt w Pythonie zapisał najpierw wszystkie Al, a potem Cu:
+        if(i < (params.N * 2 / 3)) particles[i] = Al; // 2/3 to aluminium
+        else particles[i] = Cu;                       // 1/3 to miedź
         
-    //     // Wczytanie dokładnych współrzędnych XYZ
-    //     wczytaj >> particles[i].x >> particles[i].y >> particles[i].z;
-    //     particles[i].x /= params.r_ref;
-    //     particles[i].y /= params.r_ref;
-    //     particles[i].z /= params.r_ref;
-    // }
-    // wczytaj.close();
+        // Wczytanie dokładnych współrzędnych XYZ
+        wczytaj >> particles[i].x >> particles[i].y >> particles[i].z;
+        particles[i].x /= params.r_ref;
+        particles[i].y /= params.r_ref;
+        particles[i].z /= params.r_ref;
+    }
+    wczytaj.close();
+
+    std::ofstream polozenie_pocz("wyniki/polozenie_pocz.xyz");
+    polozenie_pocz << params.N << std::endl << std::endl;
+    std::string symbol;
+    for(int i = 0; i<params.N; i++){
+        if(particles[i].mass < 2) symbol = "Al";
+        else symbol = "Cu";
+        polozenie_pocz << i << " " << symbol << " " << 
+        std::fixed << std::setprecision(5) << std::setw(6) << 
+        particles[i].x << " " << particles[i].y << " " << particles[i].z <<  std::endl;
+    }
+
+    polozenie_pocz.close();
 
     //losowe zamienienie atomów
 
@@ -109,25 +123,66 @@ int main(){
     //     particles[i].z /= params.r_ref;
     // }
 
-    std::vector<int> type_indices(params.N);
-    for (int i = 0; i < params.N; i++) type_indices[i] = i;
-    std::shuffle(type_indices.begin(), type_indices.end(), generator);
-    int n_Al = params.N * 2 / 3;
-    double delta_xy = params.Lx/ceil(cbrt(params.N));
-    int nodes_xy = floor(params.Lx/delta_xy);
-    double delta_z = params.Lz/ceil(cbrt(params.N));
-    int nodes_z = floor(params.Lz/delta_z);
-    double offset_xy = delta_xy/7.;
-    double offset_z = delta_z/7.;
+    // Losowe pozycje kubiczne
+    // std::vector<int> type_indices(params.N);
+    // for (int i = 0; i < params.N; i++) type_indices[i] = i;
+    // std::shuffle(type_indices.begin(), type_indices.end(), generator);
+    // int n_Al = params.N * 2 / 3;
+    // double delta_xy = params.Lx/ceil(cbrt(params.N));
+    // int nodes_xy = floor(params.Lx/delta_xy);
+    // double delta_z = params.Lz/ceil(cbrt(params.N));
+    // int nodes_z = floor(params.Lz/delta_z);
+    // double offset_xy = delta_xy/7.;
+    // double offset_z = delta_z/7.;
+    // for(int i = 0; i<params.N; i++){
+    //     if (type_indices[i] < n_Al) particles[i] = Al;
+    //     else particles[i] = Cu;
+    //     double rand_x = normal(generator);
+    //     double rand_y = normal(generator);
+    //     double rand_z = normal(generator);
+    //     particles[i].x = delta_xy/2. + (i%nodes_xy)*delta_xy + offset_xy*rand_x;
+    //     particles[i].y = delta_xy/2. + (int(floor(i/nodes_xy))%nodes_xy)*delta_xy + offset_xy*rand_y;
+    //     particles[i].z = delta_z/2. + floor(i/(nodes_z*nodes_z))*delta_z + offset_z*rand_z;
+    // }
+
+    //inicjalizacja połączonej listy
+
+    CELL lista(params);
+
     for(int i = 0; i<params.N; i++){
-        if (type_indices[i] < n_Al) particles[i] = Al;
-        else particles[i] = Cu;
-        double rand_x = normal(generator);
-        double rand_y = normal(generator);
-        double rand_z = normal(generator);
-        particles[i].x = delta_xy/2. + (i%nodes_xy)*delta_xy + offset_xy*rand_x;
-        particles[i].y = delta_xy/2. + (int(floor(i/nodes_xy))%nodes_xy)*delta_xy + offset_xy*rand_y;
-        particles[i].z = delta_z/2. + floor(i/(nodes_z*nodes_z))*delta_z + offset_z*rand_z;
+        int cell_index = lista.get_index(particles[i]);
+        lista.list[i] = lista.head[cell_index];
+        lista.head[cell_index] = i;
+    }
+
+    std::vector<POTENTIAL> pots = {potAl, potAlCu, potCu};
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    pots[0].buildTable();
+    pots[1].buildTable();
+    pots[2].buildTable();
+
+    // Minimalizacja energii
+
+    // calcPotAndForce(params, particles, pots, lista);
+
+    // for(int i = 0; i < params.N; i++){
+    // particles[i].ax = particles[i].fx / particles[i].mass;
+    // particles[i].ay = particles[i].fy / particles[i].mass;
+    // particles[i].az = particles[i].fz / particles[i].mass;
+    // }
+
+    minimalizacja(params, particles, pots, lista);
+    
+    std::ofstream polozenie_min("wyniki/polozenie_min.xyz");
+    polozenie_pocz << params.N << std::endl << std::endl;
+    for(int i = 0; i<params.N; i++){
+        if(particles[i].mass < 2) symbol = "Al";
+        else symbol = "Cu";
+        polozenie_min << i << " " << symbol << " " << 
+        std::fixed << std::setprecision(5) << std::setw(6) << 
+        particles[i].x << " " << particles[i].y << " " << particles[i].z << std::endl;
     }
 
     // Nadanie prędkości początkowych
@@ -165,44 +220,17 @@ int main(){
         particles[i].vz -= vz_cm;
     }
 
-    std::ofstream polozenie_pocz("wyniki/polozenie_pocz.dat");
-    int rodzaj;
-    for(int i = 0; i<params.N; i++){
-        if(particles[i].mass > 2) rodzaj = 1;
-        else rodzaj = 0;
-        polozenie_pocz << i << " " << rodzaj << " " << 
-        std::fixed << std::setprecision(5) << std::setw(6) << 
-        particles[i].x << " " << particles[i].y << " " << particles[i].z << " " <<
-        particles[i].vx << " " << particles[i].vy << " " << particles[i].vz << std::endl;
-    }
+    // Ogrzewanie i schładzanie
 
-    //inicjalizacja połączonej listy
+    // calcPotAndForce(params, particles, pots, lista);
 
-    CELL lista(params);
+    // for(int i = 0; i < params.N; i++){
+    // particles[i].ax = particles[i].fx / particles[i].mass;
+    // particles[i].ay = particles[i].fy / particles[i].mass;
+    // particles[i].az = particles[i].fz / particles[i].mass;
+    // }
 
-    for(int i = 0; i<params.N; i++){
-        int cell_index = lista.get_index(particles[i]);
-        lista.list[i] = lista.head[cell_index];
-        lista.head[cell_index] = i;
-    }
-
-    std::vector<POTENTIAL> pots = {potAl, potAlCu, potCu};
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    pots[0].buildTable();
-    pots[1].buildTable();
-    pots[2].buildTable();
-
-    calcPotAndForce(params, particles, pots, lista);
-
-    for(int i = 0; i < params.N; i++){
-    particles[i].ax = particles[i].fx / particles[i].mass;
-    particles[i].ay = particles[i].fy / particles[i].mass;
-    particles[i].az = particles[i].fz / particles[i].mass;
-    }
-
-    Verlet(params, particles, pots, lista);
+    // Verlet(params, particles, pots, lista);
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
@@ -210,9 +238,9 @@ int main(){
 
     std::ofstream polozenie_end("wyniki/polozenie_end.dat");
     for(int i = 0; i<params.N; i++){
-        if(particles[i].mass > 2) rodzaj = 1;
-        else rodzaj = 0;
-        polozenie_end << i << " " << rodzaj << " " << 
+        if(particles[i].mass < 2) symbol = "Al";
+        else symbol = "Cu";
+        polozenie_end << i << " " << symbol << " " << 
         std::fixed << std::setprecision(5) << std::setw(6) << 
         particles[i].x << " " << particles[i].y << " " << particles[i].z << " " <<
         particles[i].vx << " " << particles[i].vy << " " << particles[i].vz << std::endl;

@@ -34,13 +34,13 @@ class POTENTIAL{
         std::vector<double> energy_table;
         double r_min = 0.5/2.5; 
         double dr;
-        double inv_dr; // <--- DODANO ODWROTNOŚĆ
+        double inv_dr;
         int tab_size = 10000;
 
         double calcEnergy(double r);
         double calcForce(double r);
-        inline double getForceFast(double r) const; // <--- Dodano const
-        inline double getEnergyFast(double r) const; // <--- Dodano const
+        inline double getForceFast(double r) const;
+        inline double getEnergyFast(double r) const;
         void buildTable();
 };
 
@@ -60,6 +60,8 @@ void calcPotAndForce(const PARAMETRY& params, std::vector<ATOMS>& particles, con
 
 void Verlet(PARAMETRY& params, std::vector<ATOMS>& particles, std::vector<POTENTIAL>& pots, CELL& lista);
 
+void minimalizacja(PARAMETRY& params, std::vector<ATOMS>& particles, std::vector<POTENTIAL>& pots, CELL& lista);
+
 struct POSITION{
     double x; double y; double z;
-}
+};

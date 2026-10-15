@@ -348,7 +348,7 @@ void Verlet(PARAMETRY& params, std::vector<ATOMS>& particles,
             dane << std::fixed << std::setprecision(3) << std::setw(5) << it
                  << " " << std::fixed << std::setprecision(5) << std::setw(6)
                  << Ekin << " " << Epot << " " << Etot << " " << Temp*params.T_ref 
-                 << " " << P_inst << " " << V << std::endl;
+                 << " " << P_inst << " " << V << " " << MSD << std::endl;
         }
         wypisanie++;
     }
